@@ -1,0 +1,14 @@
+{
+  "global": {
+    "parseVersion": "1.4.2"
+  },
+  "applications": {
+    "Dibbz": {
+      "applicationId": "huArSXtIs6GFiVqZ0H7orZkF6Wiv640Zl5xHejJM",
+      "masterKey": "uMJK2SjM0DzVq2KBqWCFYw4KDCxvf6jct0oYFbWl"
+    },
+    "_default": {
+      "link": "Dibbz"
+    }
+  }
+}
