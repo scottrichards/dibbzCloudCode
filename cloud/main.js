@@ -29,22 +29,22 @@ Parse.Cloud.define("postMessage", function(request, response) {
 			success: function(queryResult) {
 					console.log("found user id: " + request.params.to);
 					console.log("queryResult: " + queryResult);
-					response.success();
+					conversation.save(null, {
+						success: function(conversation) {
+							// Execute any logic that should take place after the object is saved.
+							response.success( conversation.objectId );
+						},
+						error: function(conversation, error) {
+							// Execute any logic that should take place if the save fails.
+							// error is a Parse.Error with an error code and message.
+							response.error("Could not create conversation: " + error.message);
+						}
+					});
 			}
 		});
 
 	}
 	conversation.set("message", request.params.message);
 
-	conversation.save(null, {
-		success: function(conversation) {
-			// Execute any logic that should take place after the object is saved.
-			response.success( conversation.objectId );
-		},
-		error: function(conversation, error) {
-			// Execute any logic that should take place if the save fails.
-			// error is a Parse.Error with an error code and message.
-			response.error("Could not create conversation: " + error.message);
-		}
-	});
+	
 });
