@@ -13,10 +13,26 @@ Parse.Cloud.define("postMessage", function(request, response) {
 	var ConversationClass = Parse.Object.extend("Conversations");
 	var conversation = new ConversationClass();
 
-  if (request.params.from)
-		conversation.set("from", request.params.from);
+	console.log("postMessage to: " + request.params.to);
+
+	var currentUser = Parse.User.current();
+	if (currentUser) {
+			console.log("user is logged in");
+			conversation.set("from", currentUser);
+	} else {
+			console.log("no user is logged in");
+	}
 	if (request.params.to) {
-		conversation.set("to", request.params.to);
+		var query = new Parse.Query(Parse.User);
+		query.equalTo("objectId", request.params.to);  // find all the women
+		query.find({
+			success: function(queryResult) {
+					console.log("found user id: " + request.params.to);
+					console.log("queryResult: " + queryResult);
+					response.success();
+			}
+		});
+
 	}
 	conversation.set("message", request.params.message);
 
