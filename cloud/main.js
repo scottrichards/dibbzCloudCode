@@ -123,11 +123,10 @@ Parse.Cloud.beforeSave(Parse.User, function(request, response) {
 Parse.Cloud.define("addItemThumbnails", function(request, response) {
 	var Items = Parse.Object.extend("Items");
 	var query = new Parse.Query(Items);
- 	query.find({
-		success: function(results) {
+ 	query.find().then(function(results) {
 			console.log("Successfully retrieved " + results.length + " items.");
 			// Do something with the returned Parse.Object values
-			for (var i = 0; i < 4; i++) {
+			for (var i = 0; i < 8; i++) {
 				var object = results[i];
 				if (object.get('Thumbnail')) {
 					console.log(object.get('Name') + ' Thumbnail EXISTS ');
@@ -135,7 +134,7 @@ Parse.Cloud.define("addItemThumbnails", function(request, response) {
 					console.log(object.get('Name') + ' NO Thumbnail ');
 					console.log("url: " + object.get("Image").url());
 					Parse.Cloud.httpRequest({
-							url: object.get("Image").url()
+							url: object.get("Image").url(),
 						}).then(function(response) {
 						  console.log("Loaded Image");
 							var image = new Image();
@@ -167,19 +166,19 @@ Parse.Cloud.define("addItemThumbnails", function(request, response) {
 							// Attach the image file to the original object.
 							console.log("setting Thumbnail");
 							object.set("Thumbnail", cropped);
+							console.log("Set Thumbnail for " + object.get('Name'));
 							object.save();
 						}).then(function(result) {
-							response.success();
+//							console.log("Saved :" + savedObject.get('Name')); 
+							response.success();							
 						}, function(error) {
 							response.error(error);
 						});
 				}
 			}
-		},
-		error: function(error) {
+		}, function(error) {
 			console.log("Error: " + error.code + " " + error.message);
-		}
-	});
+		});
 });
 
 // Use Parse.Cloud.define to define as many cloud functions as you want.
@@ -221,4 +220,68 @@ Parse.Cloud.define("postMessage", function(request, response) {
 
 	}
 	conversation.set("message", request.params.message);
+});
+
+
+// Use Parse.Cloud.define to define as many cloud functions as you want.
+// For example:
+Parse.Cloud.define("addItemThumbnail", function(request, response) {
+	var Items = Parse.Object.extend("Items");
+	var query = new Parse.Query(Items);
+	query.equalTo("objectId",request.params.objectId);
+	query.find().then(function(results) {
+		console.log("Successfully retrieved " + results.length + " items.");
+		// Do something with the returned Parse.Object values
+		
+		var object = results[0];
+		if (object.get('Thumbnail')) {
+			console.log(object.get('Name') + ' Thumbnail EXISTS ');
+		} else {
+			console.log(object.get('Name') + ' NO Thumbnail ');
+			console.log("url: " + object.get("Image").url());
+			Parse.Cloud.httpRequest({
+					url: object.get("Image").url(),
+				}).then(function(response) {
+					console.log("Loaded Image");
+					var image = new Image();
+					return image.setData(response.buffer);
+				}).then(function(image) {
+					// Resize the image to 64x64.
+					console.log("creating thumbnail at 64x64");
+					return image.scale({
+						width: 64,
+						height: 64
+					});
+
+				}).then(function(image) {
+					// Make sure it's a JPEG to save disk space and bandwidth.
+					console.log("created thumbnail dimensions: " + image.width() + "x" + image.height());
+					return image.setFormat("JPEG");
+
+				}).then(function(image) {
+					// Get the image data in a Buffer.
+					return image.data();
+
+				}).then(function(buffer) {
+					// Save the image into a new file.
+					var base64 = buffer.toString("base64");
+					var cropped = new Parse.File("thumbnail.jpg", { base64: base64 });
+					return cropped.save();
+
+				}).then(function(cropped) {
+					// Attach the image file to the original object.
+					console.log("setting Thumbnail");
+					object.set("Thumbnail", cropped);
+					console.log("Set Thumbnail for " + object.get('Name'));
+					object.save();
+				}).then(function(result) {
+//							console.log("Saved :" + savedObject.get('Name')); 
+					response.success();							
+				}, function(error) {
+					response.error(error);
+				});
+		}
+	}, function(error) {
+		console.log("Error: " + error.code + " " + error.message);
+	});
 });
